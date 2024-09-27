@@ -1,4 +1,3 @@
-
 # Introduction
 # This assignment introduces students to the implementation of Artificial Intelligence
 # search algorithms using Python.
@@ -8,71 +7,91 @@
 # through step-by-step process.
 
 
-
 import time
 import bfs_agent
 import dfs_agent
 from domain import IAgent
-import grid_agent
+from grid import (
+    Grid,
+    hard_coded_grid,
+    user_input_grid,
+    COLOR_NORM,
+    COLOR_PATH,
+    COLOR_QUEUE,
+    COLOR_VISITED,
+    int_input_with_limits,
+    elevation_mapping,
+    PositionChar,
+)
 import os
 
-def print_stats(agent: IAgent)->None:
-            print('AGENT POSITION: ', agent.position())
-            print('visited: ', len((agent.visited())), f' (marked in {grid_agent.COLOR_VISITED}green{grid_agent.COLOR_NORM})')
-            print('queue: ', len(set(agent.to_explore())), f' (marked  in {grid_agent.COLOR_QUEUE}blue{grid_agent.COLOR_NORM})')
-            if (type(agent)==bfs_agent.BfsAgent):
-                print('optimal path steps: ', len((agent.shortest_path)), f' (marked  in {grid_agent.COLOR_PATH}red{grid_agent.COLOR_NORM})')
-            print('Current neighbors: ')
-            for neighbor in agent.neighbors():
-                 print(neighbor)
+import ufs_agent
 
 
-if __name__ == '__main__':
+def print_stats(agent: IAgent) -> None:
+    print(
+        f"visited ({PositionChar.VISITED.value}): ",
+        len((agent.visited())),
+    )
+    print(
+        f"queue ({PositionChar.QUEUE.value}): ",
+        len(set(agent.to_explore())),
+    )
+    if type(agent) == bfs_agent.BfsAgent:
+        print(
+            f"optimal path ({PositionChar.PATH.value}) steps: ",
+            len((agent.shortest_path)),
+        )
+    for elevation in range(6):
+        color_code = elevation_mapping[elevation].value
+        print(f"{color_code}Elevation {elevation}\033[0m")
+    if type(agent) == ufs_agent.UfsAgent:
+        print(f"agent._cost: {agent._cost}")
 
-    grid = grid_agent.hard_coded_grid()
-    print(f"Welcome to Will Lapinel's {grid_agent.COLOR_VISITED}BFS Simulator!{grid_agent.COLOR_NORM}")
+
+if __name__ == "__main__":
+
+    grid = hard_coded_grid()
+    print(f"Welcome to Will Lapinel's {COLOR_VISITED}BFS Simulator!{COLOR_NORM}")
     custom = input('Customize settings? "Y" (any other key to use default settings)? ')
-    if custom.lower() == 'y':
-         grid = grid_agent.user_input_grid()
-    agent_type_prompt = '''
+    if custom.lower() == "y":
+        grid = user_input_grid()
+    agent_type_prompt = """
                        Enter agent type:\n
-                       1. Breadth-first agent\n
-                       2. Depth-first agent\n
-                       '''
-    agent_type = grid_agent.int_input_with_limits(1, 2, agent_type_prompt)
+                       1. Breadth-First Search agent\n
+                       2. Depth-First Search agent\n
+                       3. Uniform Cost Search agent\n
+                       """
+    agent_type = int_input_with_limits(1, 3, agent_type_prompt)
     agent = None
-    if agent_type == 1: 
+    if agent_type == 1:
         agent = bfs_agent.new_bfs_agent()
     elif agent_type == 2:
         agent = dfs_agent.new_dfs_agent()
+    elif agent_type == 3:
+        agent = ufs_agent.new_ufs_agent()
     else:
-         raise ValueError
+        raise ValueError
     grid.add_agent(agent)
-    max_iterations=1000
+    max_iterations = 1000
     print("\033[?25l", end="")
     for i in range(max_iterations):
         print("\033[H", end="")
         if i != max_iterations - 1:
-            if os.name == 'nt':
-                os.system('cls')
+            if os.name == "nt":
+                os.system("cls")
             # For Mac and Linux
             else:
-                os.system('clear')
+                os.system("clear")
         if grid.is_finished():
-            print('Goal reached!')
+            print("Goal reached!")
             print_stats(agent)
             grid.render()
             time.sleep(2)
             print("\033[?25h", end="")
-            exit() 
+            exit()
         grid.move_agents()
         print_stats(agent)
         grid.render()
         time.sleep(0.1)
-    print('Max iterations reached!')
-
-
-
-
-
-
+    print("Max iterations reached!")

@@ -13,31 +13,37 @@ DOWN: Direction = (0, 1)
 RIGHT: Direction = (1, 0)
 LEFT: Direction = (-1, 0)
 
-COLOR_VISITED = '\033[92m'
-COLOR_PATH = '\033[91m'
-COLOR_QUEUE = '\033[94m'
-COLOR_NORM = '\033[0m'
+COLOR_VISITED = "\033[92m"
+COLOR_PATH = "\033[91m"
+COLOR_QUEUE = "\033[94m"
+COLOR_NORM = "\033[0m"
 
 directions: Directions = [UP, DOWN, LEFT, RIGHT]
+
 
 class Position:
     def __init__(self, x_coord, y_coord):
         self.x_coord = x_coord
-        self.y_coord= y_coord
-    
+        self.y_coord = y_coord
+        self.el = 0
+
     def __eq__(self, other) -> bool:
         if isinstance(other, Position):
             return (self.x_coord == other.x_coord) and (self.y_coord == other.y_coord)
         return False
-    
+
     def __str__(self) -> str:
         return f"x:{self.x_coord}, y:{self.y_coord}"
-    
+
     def __hash__(self) -> int:
         return hash((self.x_coord, self.y_coord))
-    
+
     def __iter__(self):
         return iter(self.x_coord, self.y_coord)
+
+    def set_el(self, el: int):
+        self.el = el
+
 
 class Dimensions:
     def __init__(self, width, height):
@@ -56,38 +62,42 @@ class IAgent(ABC):
         pass
 
     @abstractmethod
-    def visited(self)->set[Position]:
+    def visited(self) -> set[Position]:
         pass
 
     @abstractmethod
-    def position(self)->Position:
+    def position(self) -> Position:
         pass
 
     @abstractmethod
-    def to_explore(self)->deque[Position]:
+    def to_explore(self) -> deque[Position]:
         pass
 
     @abstractmethod
-    def neighbors(self)->list[Position]:
+    def neighbors(self) -> list[Position]:
         pass
-    
+
+    @abstractmethod
+    def seen(self) -> set[Position]:
+        pass
+
 
 class IGrid(ABC):
 
     @abstractmethod
-    def start(self)->Position:
+    def start(self) -> Position:
         pass
 
     @abstractmethod
-    def goal(self)->Position:
+    def goal(self) -> Position:
         pass
 
     @abstractmethod
-    def width(self)->int:
+    def width(self) -> int:
         pass
 
     @abstractmethod
-    def height(self)->int:
+    def height(self) -> int:
         pass
 
     @abstractmethod
@@ -95,7 +105,7 @@ class IGrid(ABC):
         pass
 
     @abstractmethod
-    def walls(self)->list[Position]:
+    def walls(self) -> list[Position]:
         pass
 
     @abstractmethod
@@ -103,7 +113,7 @@ class IGrid(ABC):
         pass
 
     @abstractmethod
-    def is_finished(self)->bool:
+    def is_finished(self) -> bool:
         pass
 
     @abstractmethod
@@ -114,3 +124,14 @@ class IGrid(ABC):
     def render(self):
         pass
 
+    @abstractmethod
+    def get_el(self, pos: Position) -> int:
+        pass
+
+    @abstractmethod
+    def set_el(self, pos: Position, el: int):
+        pass
+
+    @abstractmethod
+    def is_valid(self, pos: Position) -> bool:
+        pass
