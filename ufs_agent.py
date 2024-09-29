@@ -20,17 +20,21 @@ class UfsAgent(IAgent):
         """Cumulative cost tracker"""
         self._neighbors: list[Position] = []
         """Current neighbors"""
-        self._path: list[Position] = []
-        """Path traveled"""
+        self._optimal_path: list[Position] = []
+        """Cheapest path"""
         self._counter = 0
         """For acting as a tie-breaker for the priority queue, ensuring it uses insertion order when costs are equal"""
         self._seen: set[Position] = set()
+        """To register a cell as having been 'seen' by the agent so that it can be rendered on the screen, simulating known vs. unknown territory"""
+        self.parents: dict[Position, Position] = {}
+        """For reconstructing optimal path once the goal is reached"""
 
     def next(self):
         if len(self._prty_queue) > 0:
             self._cost, _, self._current = heapq.heappop(self._prty_queue)
             self._visited.add(self._current)
         if self._current == self._grid.goal():
+            self._find_optimal()
             self._grid.set_finished()
         else:
             self._add_neighbors()
@@ -73,4 +77,16 @@ class UfsAgent(IAgent):
             is_valid = self._grid.is_valid(neighbor)
             in_set = neighbor in self._pri_set
             if (not is_visited) and is_valid and (not in_set):
+                self.parents[neighbor] = self._current
                 self._push_to_queue(neighbor)
+
+    def _find_optimal(self):
+        finished = False
+        while not finished:
+            self._optimal_path.append(self.parents[self._current])
+            self._current = self.parents[self._current]
+            if self._current == self._grid.start():
+                finished = True
+
+    def optimal_path(self) -> list[Position]:
+        return self._optimal_path

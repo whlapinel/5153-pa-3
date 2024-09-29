@@ -10,15 +10,13 @@
 import time
 import bfs_agent
 import dfs_agent
-from domain import IAgent
+from domain import IAgent, COLOR_VISITED
 from grid import (
     Grid,
+    ObjectColor,
     hard_coded_grid,
     user_input_grid,
     COLOR_NORM,
-    COLOR_PATH,
-    COLOR_QUEUE,
-    COLOR_VISITED,
     int_input_with_limits,
     elevation_mapping,
     PositionChar,
@@ -37,14 +35,19 @@ def print_stats(agent: IAgent) -> None:
         f"queue ({PositionChar.QUEUE.value}): ",
         len(set(agent.to_explore())),
     )
-    if type(agent) == bfs_agent.BfsAgent:
-        print(
-            f"optimal path ({PositionChar.PATH.value}) steps: ",
-            len((agent.shortest_path)),
-        )
+    print(f"Agent: {ObjectColor.AGENT.value}{PositionChar.AGENT.value}{COLOR_NORM}")
+    print(f"Start: {ObjectColor.START.value}{PositionChar.START.value}{COLOR_NORM}")
+    print(f"Goal: {ObjectColor.GOAL.value}{PositionChar.GOAL.value}{COLOR_NORM}")
+    print(f"Wall: {ObjectColor.WALL.value}{PositionChar.WALL.value}{COLOR_NORM}")
+    print(
+        f"optimal path ({PositionChar.PATH.value}) length: ",
+        len((agent.optimal_path())),
+    )
+    print("Elevation legend: ", end=" ")
     for elevation in range(6):
         color_code = elevation_mapping[elevation].value
-        print(f"{color_code}Elevation {elevation}\033[0m")
+        print(f"{color_code}{elevation}\033[0m", end=" ")
+    print()
     if type(agent) == ufs_agent.UfsAgent:
         print(f"agent._cost: {agent._cost}")
 
@@ -93,5 +96,5 @@ if __name__ == "__main__":
         grid.move_agents()
         print_stats(agent)
         grid.render()
-        time.sleep(0.1)
+        # time.sleep(0.05)
     print("Max iterations reached!")

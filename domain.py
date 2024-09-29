@@ -74,6 +74,10 @@ class IAgent(ABC):
         pass
 
     @abstractmethod
+    def optimal_path(self) -> list[Position]:
+        pass
+
+    @abstractmethod
     def neighbors(self) -> list[Position]:
         pass
 
@@ -130,6 +134,10 @@ class IGrid(ABC):
 
     @abstractmethod
     def set_el(self, pos: Position, el: int):
+        pass
+
+    @abstractmethod
+    def set_els(self, pos1: Position, pos2: Position, el: int):
         pass
 
     @abstractmethod

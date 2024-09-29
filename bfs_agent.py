@@ -81,5 +81,8 @@ class BfsAgent(IAgent):
         while not finished:
             self.shortest_path.append(self.parents[self._position])
             self._position = self.parents[self._position]
-            if self.position == self.grid.start():
+            if self._position == self.grid.start():
                 finished = True
+
+    def optimal_path(self) -> list[Position]:
+        return self.shortest_path

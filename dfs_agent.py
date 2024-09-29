@@ -13,6 +13,8 @@ class DfsAgent(IAgent):
         self._stack: deque[Position] = deque()
         self._path: list[Position] = []
         self._seen: set[Position] = set()
+        self._parents: dict[Position, Position] = {}
+        self._optimal_path: list[Position] = []
 
     def set_grid(self, grid: IGrid):
         self.grid = grid
@@ -41,6 +43,7 @@ class DfsAgent(IAgent):
         if len(self._stack) > 0:
             self._pop_stack()
         if self._position == self.grid.goal():
+            self._find_optimal()
             self.grid.set_finished()
         self._mark_visited()
         self._add_neighbors()
@@ -55,6 +58,9 @@ class DfsAgent(IAgent):
             neighbors.append(neighbor)
         return neighbors
 
+    def optimal_path(self) -> list[Position]:
+        return self._optimal_path
+
     def _in_stack(self, pos: Position) -> bool:
         return pos in self._stack
 
@@ -66,7 +72,17 @@ class DfsAgent(IAgent):
             is_valid = self.grid.is_valid(nghbr)
             in_stack = self._in_stack(nghbr)
             if (not is_visited) and is_valid and (not in_stack):
+                self._parents[nghbr] = self._position
                 self._push_stack(nghbr)
+
+    def _find_optimal(self):
+        finished = False
+        while not finished:
+            print("stuck finding optimal. position: ", self._position)
+            self._optimal_path.append(self._parents[self._position])
+            self._position = self._parents[self._position]
+            if self._position == self.grid.start():
+                finished = True
 
     def _is_visited(self, pos: Position):
         return pos in self._visited

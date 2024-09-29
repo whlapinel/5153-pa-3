@@ -1,7 +1,4 @@
 from __future__ import annotations
-from abc import ABC, abstractmethod
-from collections import deque
-from turtle import bgcolor
 from bfs_agent import BfsAgent
 from domain import (
     IAgent,
@@ -9,9 +6,6 @@ from domain import (
     Position,
     Dimensions,
     COLOR_NORM,
-    COLOR_PATH,
-    COLOR_QUEUE,
-    COLOR_VISITED,
 )
 from utils import int_input_with_limits, translate
 
@@ -29,6 +23,14 @@ class PositionChar(Enum):
     QUEUE = "*"
     PATH = "="
     DEFAULT = " "
+
+
+class ObjectColor(Enum):
+    AGENT = "\033[38;5;46m"  # Green
+    START = "\033[38;5;46m"  # Green
+    GOAL = "\033[38;5;46m"  # Green
+    WALL = "\033[38;5;214m"  # Orange
+    PATH = "\033[38;5;226m"  # Yellow
 
 
 class ElevationColor(Enum):
@@ -97,6 +99,17 @@ class Grid(domain.IGrid):
     def set_el(self, pos: Position, el: int):
         self.el_map[pos.x_coord][pos.y_coord] = el
 
+    def set_els(self, pos1: Position, pos2: Position, el):
+        x_start, x_end = min(pos1.x_coord, pos2.x_coord), max(
+            pos1.x_coord, pos1.x_coord
+        )
+        y_start, y_end = min(pos1.y_coord, pos2.y_coord), max(
+            pos1.y_coord, pos2.y_coord
+        )
+        for x in range(x_start, x_end + 1):
+            for y in range(y_start, y_end + 1):
+                self.set_el(Position(x, y), el)
+
     def start(self):
         return self._start
 
@@ -132,9 +145,37 @@ class Grid(domain.IGrid):
         not_wall = pos not in self._walls
         return valid_x and valid_y and not_wall
 
-    def _color(self, pos: Position) -> str:
-        el = self.get_el(pos)
-        return elevation_mapping[el].value
+    def _color(self, pos: Position, char: str) -> str:
+        if (
+            char == PositionChar.DEFAULT.value
+            or char == PositionChar.QUEUE.value
+            or char == PositionChar.VISITED.value
+        ):
+            el = self.get_el(pos)
+            return elevation_mapping[el].value
+        else:
+            return self._char_color(char)
+
+    def _char_color(self, char: str) -> str:
+        if char == PositionChar.AGENT.value:
+            return ObjectColor.AGENT.value
+        if char == PositionChar.GOAL.value:
+            return ObjectColor.GOAL.value
+        if char == PositionChar.START.value:
+            return ObjectColor.START.value
+        if char == PositionChar.WALL.value:
+            return ObjectColor.WALL.value
+        if char == PositionChar.PATH.value:
+            return ObjectColor.PATH.value
+        raise ValueError
+
+    def _print_position(self, color: str, char: str):
+        padding = 2
+        gap_str = " " * padding
+        print(
+            f"{color}{char}{COLOR_NORM}",
+            end=gap_str,
+        )
 
     def _char(self, pos: Position) -> str:
         if pos in self._agents[0].seen():
@@ -147,9 +188,8 @@ class Grid(domain.IGrid):
             for agent in self._agents:
                 if pos == agent.position():
                     return PositionChar.AGENT.value
-                if type(agent) == BfsAgent:
-                    if pos in agent.shortest_path:
-                        return PositionChar.PATH.value
+                if pos in agent.optimal_path():
+                    return PositionChar.PATH.value
                 if pos in agent.visited():
                     return PositionChar.VISITED.value
                 if pos in agent.to_explore():
@@ -157,16 +197,13 @@ class Grid(domain.IGrid):
         return PositionChar.DEFAULT.value
 
     def render(self) -> None:
-        padding = 2
-        gap_str = " " * padding
         print()
         for row in range(self._dimensions.height):
             for column in range(self._dimensions.width):
                 curr_pos = Position(column, row)
-                print(
-                    f"{self._color(curr_pos)}{self._char(curr_pos)}{COLOR_NORM}",
-                    end=gap_str,
-                )
+                char = self._char(curr_pos)
+                color = self._color(curr_pos, char)
+                self._print_position(color, char)
             print()
         print()
 
@@ -231,10 +268,26 @@ def hard_coded_grid() -> IGrid:
         Position(6, 4),
     ]
     grid = Grid(Dimensions(20, 20), Position(2, 3), Position(16, 18), walls)
-    for i in range(15):
-        grid.set_el(Position(i, 4), 1)
-    for i in range(15):
-        grid.set_el(Position(i + 5, 5), 2)
-    for i in range(15):
-        grid.set_el(Position(i, 6), 3)
+    create_mountain(grid, Position(5, 6), 4)
+    create_mountain(grid, Position(10, 12), 4)
+    create_mountain(grid, Position(15, 3), 3)
+    create_mountain(grid, Position(3, 15), 3)
+
     return grid
+
+
+def create_mountain(grid: IGrid, center_pos: Position, max_height=3):
+    cx, cy = center_pos.x_coord, center_pos.y_coord
+
+    # Start from max_height down to 0, decrementing by 1
+    for elevation in range(max_height, -1, -1):
+        # Calculate the square boundary for the current elevation level
+        x_start = cx - elevation
+        x_end = cx + elevation
+        y_start = cy - elevation
+        y_end = cy + elevation
+
+        # Set the elevation for all points within this boundary to the current elevation
+        for x in range(x_start, x_end + 1):
+            for y in range(y_start, y_end + 1):
+                grid.set_els(Position(x, y), Position(x, y), max_height - elevation)
